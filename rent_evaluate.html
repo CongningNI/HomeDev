@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Rent Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #input-container { margin: 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Rent Payment Visualization</h1>
+<div id="input-container">
+    <label for="rentInput">Enter Current Rent for 2b2b Apartment:</label>
+    <input type="number" id="rentInput" value="3144" min="2000" max="4000" step="1">
+    <button onclick="updatePlot()">Submit</button>
+</div>
+
+<div id="plot"></div>
+
+<script>
+// Constants for the payment plans
+const months_16_lease = 16;
+const months_paid_16 = 14;
+const parking_cost_1st_vehicle = 60;
+const parking_cost_2nd_vehicle = 125;
+const pet_rent = 25;
+const monthly_fees = 106;
+const utility_error_low = 160;
+const utility_error_high = 250;
+const total_cost_1b1b = 1492 + 55 + 77 + 2010; // Total cost of two 1b1b apartments
+
+function generateData(currentRent) {
+    const xRentRange = Array.from({length: 11}, (_, i) => 2500 + i * 100);
+    const y16MonthPlan = xRentRange.map(x => (x * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees);
+    const y16MonthPlanLow = y16MonthPlan.map(y => y + utility_error_low);
+    const y16MonthPlanHigh = y16MonthPlan.map(y => y + utility_error_high);
+    const yCurrentRentLow = (currentRent * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_low;
+    const yCurrentRentHigh = (currentRent * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_high;
+
+    return { xRentRange, y16MonthPlan, y16MonthPlanLow, y16MonthPlanHigh, yCurrentRentLow, yCurrentRentHigh };
+}
+
+function plotData(currentRent) {
+    const { xRentRange, y16MonthPlan, y16MonthPlanLow, y16MonthPlanHigh, yCurrentRentLow, yCurrentRentHigh } = generateData(currentRent);
+
+    const traces = [
+        {
+            x: xRentRange,
+            y: y16MonthPlanLow,
+            fill: 'none',
+            mode: 'lines',
+            line: { width: 0 },
+            showlegend: false,
+        },
+        {
+            x: xRentRange,
+            y: y16MonthPlanHigh,
+            fill: 'tonexty',
+            mode: 'lines',
+            line: { width: 0 },
+            fillcolor: 'rgba(0, 100, 250, 0.2)',
+            name: "Utility Range"
+        },
+        {
+            x: xRentRange,
+            y: y16MonthPlan,
+            mode: 'lines',
+            line: { color: 'blue' },
+            name: "16-month lease (2 months free)"
+        },
+        {
+            x: [currentRent, currentRent],
+            y: [yCurrentRentLow, yCurrentRentHigh],
+            mode: 'lines',
+            line: { color: 'purple', dash: 'dash' },
+            name: `Current Rent (${currentRent})`
+        },
+        {
+            x: [Math.min(...xRentRange), Math.max(...xRentRange)],
+            y: [total_cost_1b1b, total_cost_1b1b],
+            mode: 'lines',
+            line: { color: 'red', dash: 'dash' },
+            name: "Current 2 1b1b apartments"
+        }
+    ];
+
+    const layout = {
+        title: 'Rent Payment Visualization',
+        xaxis: { title: 'Base Rent for 2b2b Apartment ($)' },
+        yaxis: { title: 'Total Monthly Payment ($)' },
+        showlegend: true,
+    };
+
+    Plotly.newPlot('plot', traces, layout);
+}
+
+function updatePlot() {
+    const currentRent = document.getElementById('rentInput').value;
+    plotData(currentRent);
+}
+
+// Initial plot
+plotData(3144);
+</script>
+
+</body>
+</html>
