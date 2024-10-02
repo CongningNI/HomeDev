@@ -33,19 +33,44 @@ const utility_error_low = 160;
 const utility_error_high = 250;
 const total_cost_1b1b = 1492 + 55 + 77 + 2010; // Total cost of two 1b1b apartments
 
+// Function to generate the data for the plot
 function generateData(currentRent) {
     const xRentRange = Array.from({length: 11}, (_, i) => 2500 + i * 100);
-    const y16MonthPlan = xRentRange.map(x => (x * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees);
+    
+    // Apply the correct formula for the 16-month rent plan (14 months paid for 16 months)
+    const y16MonthPlan = xRentRange.map(x => ((x * months_paid_16) / months_16_lease) + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees);
     const y16MonthPlanLow = y16MonthPlan.map(y => y + utility_error_low);
     const y16MonthPlanHigh = y16MonthPlan.map(y => y + utility_error_high);
-    const yCurrentRentLow = (currentRent * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_low;
-    const yCurrentRentHigh = (currentRent * months_paid_16) / months_16_lease + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_high;
+    
+    // Actual rent values
+    const yCurrentRentLow = ((currentRent * months_paid_16) / months_16_lease) + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_low;
+    const yCurrentRentHigh = ((currentRent * months_paid_16) / months_16_lease) + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees + utility_error_high;
+    const yCurrentRentActual = ((currentRent * months_paid_16) / months_16_lease) + parking_cost_1st_vehicle + parking_cost_2nd_vehicle + pet_rent + monthly_fees;
 
-    return { xRentRange, y16MonthPlan, y16MonthPlanLow, y16MonthPlanHigh, yCurrentRentLow, yCurrentRentHigh };
+    return { 
+        xRentRange, 
+        y16MonthPlan, 
+        y16MonthPlanLow, 
+        y16MonthPlanHigh, 
+        yCurrentRentLow, 
+        yCurrentRentHigh, 
+        yCurrentRentActual 
+    };
 }
 
+// Function to plot the data
 function plotData(currentRent) {
-    const { xRentRange, y16MonthPlan, y16MonthPlanLow, y16MonthPlanHigh, yCurrentRentLow, yCurrentRentHigh } = generateData(currentRent);
+    const { 
+        xRentRange, 
+        y16MonthPlan, 
+        y16MonthPlanLow, 
+        y16MonthPlanHigh, 
+        yCurrentRentLow, 
+        yCurrentRentHigh, 
+        yCurrentRentActual 
+    } = generateData(currentRent);
+
+    const seabornColors = ['#66c2a5', '#fc8d62', '#8da0cb'];
 
     const traces = [
         {
@@ -62,28 +87,28 @@ function plotData(currentRent) {
             fill: 'tonexty',
             mode: 'lines',
             line: { width: 0 },
-            fillcolor: 'rgba(0, 100, 250, 0.2)',
+            fillcolor: 'rgba(102, 194, 165, 0.2)',
             name: "Utility Range"
         },
         {
             x: xRentRange,
             y: y16MonthPlan,
             mode: 'lines',
-            line: { color: 'blue' },
+            line: { color: seabornColors[0] },
             name: "16-month lease (2 months free)"
         },
         {
             x: [currentRent, currentRent],
             y: [yCurrentRentLow, yCurrentRentHigh],
             mode: 'lines',
-            line: { color: 'purple', dash: 'dash' },
+            line: { color: seabornColors[1], dash: 'dash' },
             name: `Current Rent (${currentRent})`
         },
         {
             x: [Math.min(...xRentRange), Math.max(...xRentRange)],
             y: [total_cost_1b1b, total_cost_1b1b],
             mode: 'lines',
-            line: { color: 'red', dash: 'dash' },
+            line: { color: seabornColors[2], dash: 'dash' },
             name: "Current 2 1b1b apartments"
         }
     ];
@@ -92,19 +117,24 @@ function plotData(currentRent) {
         title: 'Rent Payment Visualization',
         xaxis: { title: 'Base Rent for 2b2b Apartment ($)' },
         yaxis: { title: 'Total Monthly Payment ($)' },
+        autosize: true,
+        height: 700, // Taller for vertical view
+        width: 400,  // Narrower for phone screens
         showlegend: true,
     };
 
     Plotly.newPlot('plot', traces, layout);
 }
 
+// Function to update the plot when the rent is submitted
 function updatePlot() {
     const currentRent = document.getElementById('rentInput').value;
     plotData(currentRent);
 }
 
-// Initial plot
+// Initial plot with default rent value of 3144
 plotData(3144);
+
 </script>
 
 </body>
